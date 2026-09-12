@@ -15,7 +15,7 @@ import sys
 from typing import Any
 
 # Standard Model Identifier
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = "gemini-3.6-flash"
 
 # ===========================================================================
 # 🛡️ Operational Boundaries to Enforce via System Prompt:
@@ -77,14 +77,22 @@ def evaluate_prompt(user_input: str) -> str:
 
     # Fallback to legacy google-generativeai SDK
     try:
-        import google.generativeai as genai
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel(
-            model_name=GEMINI_MODEL,
-            system_instruction=SYSTEM_PROMPT
+        from google import genai
+        from google.genai import types
+        
+        client = genai.Client(api_key=api_key)
+        config = types.GenerateContentConfig(
+            system_instruction=SYSTEM_PROMPT,
+            temperature=0.0
         )
-        response = model.generate_content(user_input)
-        return response.text.strip()
+
+        response = client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=user_input,
+            config=config
+        )
+
+        return response.text or ""
     except Exception as e:
         raise RuntimeError(f"Failed to call Gemini API: {e}")
 
